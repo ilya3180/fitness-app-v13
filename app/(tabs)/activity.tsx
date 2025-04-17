@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import styled from 'styled-components/native';
-import { View, ScrollView, Text } from 'react-native';
+import { View, ScrollView, Text, RefreshControl, ActivityIndicator } from 'react-native';
 import { MaterialCommunityIcons, FontAwesome5, Feather } from '@expo/vector-icons';
 import { ProfileMenu } from '@/components/ProfileMenu';
+import { useSupabaseAuth } from '@/hooks/useSupabase';
+import { getUserStats, getWorkoutHistory, formatTime, formatWorkoutDate, getRegularity, getAchievements } from '@/lib/supabase/api';
+import { UserStats, WorkoutHistoryItem, RegularityData, Achievement } from '@/lib/supabase/api';
+import { cacheUserStats, cacheRegularity, cacheAchievements, cacheWorkoutHistory, 
+  getCachedUserStats, getCachedRegularity, getCachedAchievements, getCachedWorkoutHistory } from '@/lib/cache';
+import { useFocusEffect } from '@react-navigation/native';
 
 const ACCENT = '#D13F32';
 const BORDER = '#000';
@@ -10,21 +16,150 @@ const BG = '#fff';
 const GREY = '#F3F4F6';
 
 export default function ActivityScreen() {
+  const { user } = useSupabaseAuth();
+  const [stats, setStats] = useState<UserStats>({ workouts: 0, total_time: 0, progress: 0, badges: 0 });
+  const [regularity, setRegularity] = useState<RegularityData>({ dates: [] });
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [workoutHistory, setWorkoutHistory] = useState<WorkoutHistoryItem[]>([]);
+  
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  
+  // Функция для получения всех данных
+  const fetchAllData = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      
+      // Получаем текущую дату и даты для календаря (35 дней назад)
+      const today = new Date();
+      const startDate = new Date();
+      startDate.setDate(today.getDate() - 34); // 35 дней (5 недель для календаря)
+      
+      const formatDateForAPI = (date: Date) => {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      };
+      
+      // Формируем даты для API
+      const endDateStr = formatDateForAPI(today);
+      const startDateStr = formatDateForAPI(startDate);
+      
+      // Пытаемся загрузить данные из кэша, если не получилось - загружаем с сервера
+      let statsData: UserStats | null = await getCachedUserStats<UserStats>(user.id);
+      let regularityData: RegularityData | null = await getCachedRegularity<RegularityData>(user.id);
+      let achievementsData: Achievement[] | null = await getCachedAchievements<Achievement[]>(user.id);
+      let historyData: WorkoutHistoryItem[] | null = await getCachedWorkoutHistory<WorkoutHistoryItem[]>(user.id);
+      
+      // Если в кэше нет данных или обновляем данные, загружаем с сервера
+      if (!statsData || refreshing) {
+        statsData = await getUserStats(user.id);
+        await cacheUserStats(statsData, user.id);
+      }
+      
+      if (!regularityData || refreshing) {
+        regularityData = await getRegularity(user.id, startDateStr, endDateStr);
+        await cacheRegularity(regularityData, user.id);
+      }
+      
+      if (!achievementsData || refreshing) {
+        achievementsData = await getAchievements(user.id);
+        await cacheAchievements(achievementsData, user.id);
+      }
+      
+      if (!historyData || refreshing) {
+        historyData = await getWorkoutHistory(user.id, 5); // Загружаем 5 последних тренировок
+        await cacheWorkoutHistory(historyData, user.id);
+      }
+      
+      // Обновляем состояние компонента
+      setStats(statsData);
+      setRegularity(regularityData);
+      setAchievements(achievementsData);
+      setWorkoutHistory(historyData);
+    } catch (error) {
+      console.error('Ошибка при загрузке данных:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [user, refreshing]);
+  
+  // Обновляем данные при фокусе на экране
+  useFocusEffect(
+    useCallback(() => {
+      fetchAllData();
+    }, [fetchAllData])
+  );
+  
+  // Обработчик обновления данных (pull-to-refresh)
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchAllData();
+  }, [fetchAllData]);
+  
+  // Проверяем, содержит ли массив регулярности указанную дату
+  const isDateInRegularity = useCallback((date: Date) => {
+    const dateString = date.toISOString().split('T')[0]; // Формат YYYY-MM-DD
+    return regularity.dates.includes(dateString);
+  }, [regularity.dates]);
+  
+  // Генерируем данные для календаря
+  const calendarDates = useCallback(() => {
+    const today = new Date();
+    const result = [];
+    
+    // Генерируем даты для последних 5 недель (35 дней)
+    for (let week = 0; week < 5; week++) {
+      const weekDates = [];
+      for (let day = 0; day < 7; day++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - (4 - week) * 7 - (6 - day));
+        weekDates.push({
+          date,
+          filled: isDateInRegularity(date)
+        });
+      }
+      result.push(weekDates);
+    }
+    
+    return result;
+  }, [isDateInRegularity]);
+  
+  // Если загрузка и нет данных в кэше, показываем спиннер
+  if (loading && !refreshing) {
+    return (
+      <Container>
+        <ProfileMenu />
+        <LoadingContainer>
+          <ActivityIndicator size="large" color={ACCENT} />
+          <LoadingText>Загрузка данных...</LoadingText>
+        </LoadingContainer>
+      </Container>
+    );
+  }
+
   return (
     <Container>
       <ProfileMenu />
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={{ flexGrow: 1 }} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <Title>АКТИВНОСТЬ</Title>
         <BlackLine />
         <Section>
           <SectionTitle>СТАТИСТИКА</SectionTitle>
           <StatsRow>
             <StatBox>
-              <StatValue>12</StatValue>
+              <StatValue>{stats.workouts}</StatValue>
               <StatLabel>ТРЕНИРОВОК</StatLabel>
             </StatBox>
             <StatBox>
-              <StatValue>6.5ч</StatValue>
+              <StatValue>{formatTime(stats.total_time)}</StatValue>
               <StatLabel>ОБЩЕЕ ВРЕМЯ</StatLabel>
             </StatBox>
           </StatsRow>
@@ -32,10 +167,10 @@ export default function ActivityScreen() {
             <ProgressLabel>ПРОГРЕСС К ЦЕЛИ</ProgressLabel>
             <ProgressBarBox>
               <ProgressBar>
-                <ProgressFill style={{ width: '68%' }}>
-                  <ProgressText>68%</ProgressText>
+                <ProgressFill style={{ width: `${stats.progress}%` }}>
+                  <ProgressText>{stats.progress}%</ProgressText>
                 </ProgressFill>
-                <ProgressEmpty style={{ width: '32%' }} />
+                <ProgressEmpty style={{ width: `${100 - stats.progress}%` }} />
               </ProgressBar>
             </ProgressBarBox>
           </ProgressSection>
@@ -43,13 +178,11 @@ export default function ActivityScreen() {
         <Section>
           <SectionTitle>РЕГУЛЯРНОСТЬ</SectionTitle>
           <CalendarGrid>
-            {[...Array(5)].map((_, row) => (
-              <CalendarRow key={row}>
-                {[...Array(7)].map((_, col) => {
-                  // Для примера: закрашиваем часть ячеек
-                  const filled = (row === 0 && col === 1) || (row === 0 && col === 3) || (row === 1 && col === 0) || (row === 1 && col === 2) || (row === 2 && col === 1) || (row === 2 && col === 3) || (row === 3 && col === 0) || (row === 3 && col === 2) || (row === 4 && col === 1);
-                  return <CalendarCell key={col} filled={filled} />;
-                })}
+            {calendarDates().map((week, rowIndex) => (
+              <CalendarRow key={rowIndex}>
+                {week.map((day, colIndex) => (
+                  <CalendarCell key={colIndex} filled={day.filled} />
+                ))}
               </CalendarRow>
             ))}
           </CalendarGrid>
@@ -57,52 +190,64 @@ export default function ActivityScreen() {
         <Section>
           <SectionTitle>ДОСТИЖЕНИЯ</SectionTitle>
           <AchievementsGrid>
-            <AchievementBox>
-              <MaterialCommunityIcons name="medal-outline" size={36} color="#000" />
-              <AchievementText>5 ТРЕНИРОВОК{"\n"}ПОДРЯД</AchievementText>
+            {achievements.length > 0 ? (
+              achievements.map((achievement) => (
+                <AchievementBox key={achievement.id}>
+                  {achievement.icon === 'medal-outline' && <MaterialCommunityIcons name="medal-outline" size={36} color="#000" />}
+                  {achievement.icon === 'clock' && <Feather name="clock" size={36} color="#000" />}
+                  {achievement.icon === 'chart-line' && <FontAwesome5 name="chart-line" size={32} color="#000" />}
+                  {achievement.icon === 'calendar' && <Feather name="calendar" size={36} color="#000" />}
+                  <AchievementText>{achievement.name}</AchievementText>
             </AchievementBox>
-            <AchievementBox>
-              <Feather name="clock" size={36} color="#000" />
-              <AchievementText>10 ЧАСОВ{"\n"}ТРЕНИРОВОК</AchievementText>
-            </AchievementBox>
-            <AchievementBox>
-              <FontAwesome5 name="chart-line" size={32} color="#000" />
-              <AchievementText>+20% К ВЕСУ</AchievementText>
-            </AchievementBox>
-            <AchievementBox>
-              <Feather name="calendar" size={36} color="#000" />
-              <AchievementText>1 МЕСЯЦ{"\n"}С НАМИ</AchievementText>
-            </AchievementBox>
+              ))
+            ) : (
+              <EmptyStateText>У вас пока нет достижений. Продолжайте тренироваться!</EmptyStateText>
+            )}
           </AchievementsGrid>
         </Section>
         <Section>
           <SectionTitle>ИСТОРИЯ</SectionTitle>
-          <WorkoutCard>
+          {workoutHistory.length > 0 ? (
+            workoutHistory.map((workout) => (
+              <WorkoutCard key={workout.id}>
             <WorkoutTitleRow>
-              <WorkoutTitle>СИЛОВАЯ ТРЕНИРОВКА</WorkoutTitle>
-              <WorkoutTag>ВЧЕРА</WorkoutTag>
+                  <WorkoutTitle>{workout.type.toUpperCase()}</WorkoutTitle>
+                  <WorkoutTag>{formatWorkoutDate(workout.date)}</WorkoutTag>
             </WorkoutTitleRow>
-            <WorkoutDesc>Верхняя часть тела • 45 мин • 5 упражнений</WorkoutDesc>
+                <WorkoutDesc>
+                  {/* Тут можно добавить дополнительную информацию о тренировке */}
+                  {workout.duration} мин • {workout.calories ? `${workout.calories} ккал` : 'без калорий'}
+                </WorkoutDesc>
           </WorkoutCard>
-          <WorkoutCard>
-            <WorkoutTitleRow>
-              <WorkoutTitle>КАРДИО</WorkoutTitle>
-              <WorkoutAgo>3 ДНЯ НАЗАД</WorkoutAgo>
-            </WorkoutTitleRow>
-            <WorkoutDesc>Интервальная • 30 мин • 320 ккал</WorkoutDesc>
-          </WorkoutCard>
-          <WorkoutCard>
-            <WorkoutTitleRow>
-              <WorkoutTitle>СИЛОВАЯ ТРЕНИРОВКА</WorkoutTitle>
-              <WorkoutAgo>5 ДНЕЙ НАЗАД</WorkoutAgo>
-            </WorkoutTitleRow>
-            <WorkoutDesc>Нижняя часть тела • 50 мин • 6 упражнений</WorkoutDesc>
-          </WorkoutCard>
+            ))
+          ) : (
+            <EmptyStateText>У вас пока нет завершенных тренировок</EmptyStateText>
+          )}
         </Section>
       </ScrollView>
     </Container>
   );
 }
+
+// Дополнительные стили
+const LoadingContainer = styled.View`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+`;
+
+const LoadingText = styled.Text`
+  margin-top: 16px;
+  font-size: 16px;
+  color: #000;
+`;
+
+const EmptyStateText = styled.Text`
+  font-size: 16px;
+  color: #666;
+  text-align: center;
+  padding: 16px;
+`;
 
 // Стили
 const Container = styled.View`
@@ -256,11 +401,6 @@ const WorkoutTag = styled.Text`
   font-weight: 900;
   padding: 2px 12px;
   margin-left: 8px;
-`;
-const WorkoutAgo = styled.Text`
-  color: #000;
-  font-size: 18px;
-  font-weight: 900;
 `;
 const WorkoutDesc = styled.Text`
   font-size: 16px;
