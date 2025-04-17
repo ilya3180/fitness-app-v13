@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
 import { FontAwesome5, AntDesign, Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
+import { ProfileMenu } from '@/components/ProfileMenu';
 
 // Компонент прогресс-бара в брутальном стиле
 const ProgressBar = ({ progress }: { progress: number }) => {
@@ -67,79 +68,82 @@ const RecommendationBlock = ({
 
 export default function WorkoutScreen() {
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.headerTitle}>ТРЕНИРОВКА</Text>
-      <View style={styles.headerDivider} />
-      
-      {/* Секция ТЕКУЩИЙ ПЛАН */}
-      <View style={styles.sectionOuterContainer}>
-        <View style={styles.sectionTitleOuterContainer}>
-          <View style={styles.sectionTitleContainer}>
-            <Text style={styles.sectionTitle}>ТЕКУЩИЙ ПЛАН</Text>
-          </View>
-        </View>
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+      <ProfileMenu />
+      <ScrollView style={styles.container}>
+        <Text style={styles.headerTitle}>ТРЕНИРОВКА</Text>
+        <View style={styles.headerDivider} />
         
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionContent}>
-            <View style={styles.currentPlanContainer}>
-              <Text style={styles.currentPlanTitle}>НАБОР МЫШЕЧНОЙ МАССЫ</Text>
-              
-              <Text style={styles.currentPlanDescription}>
-                Средний уровень • 4 недели • 3 тренировки в неделю
-              </Text>
-              
-              <Text style={styles.progressText}>ПРОГРЕСС: 5/12 ТРЕНИРОВОК</Text>
-              
-              <ProgressBar progress={42} />
-              
-              <Link href="/workout-details" asChild>
-                <TouchableOpacity style={styles.startButton}>
-                  <Text style={styles.startButtonText}>НАЧАТЬ ТРЕНИРОВКУ</Text>
-                </TouchableOpacity>
-              </Link>
+        {/* Секция ТЕКУЩИЙ ПЛАН */}
+        <View style={styles.sectionOuterContainer}>
+          <View style={styles.sectionTitleOuterContainer}>
+            <View style={styles.sectionTitleContainer}>
+              <Text style={styles.sectionTitle}>ТЕКУЩИЙ ПЛАН</Text>
+            </View>
+          </View>
+          
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionContent}>
+              <View style={styles.currentPlanContainer}>
+                <Text style={styles.currentPlanTitle}>НАБОР МЫШЕЧНОЙ МАССЫ</Text>
+                
+                <Text style={styles.currentPlanDescription}>
+                  Средний уровень • 4 недели • 3 тренировки в неделю
+                </Text>
+                
+                <Text style={styles.progressText}>ПРОГРЕСС: 5/12 ТРЕНИРОВОК</Text>
+                
+                <ProgressBar progress={42} />
+                
+                <Link href="/workout-details" asChild>
+                  <TouchableOpacity style={styles.startButton}>
+                    <Text style={styles.startButtonText}>НАЧАТЬ ТРЕНИРОВКУ</Text>
+                  </TouchableOpacity>
+                </Link>
+              </View>
             </View>
           </View>
         </View>
-      </View>
-      
-      {/* Блоки быстрых действий */}
-      <ActionBlock 
-        icon={<AntDesign name="plus" size={24} color="black" />} 
-        title="СОЗДАТЬ ПЛАН" 
-      />
-      
-      <ActionBlock 
-        icon={<FontAwesome5 name="bolt" size={24} color="black" />} 
-        title="РАЗОВАЯ ТРЕНИРОВКА" 
-        href="/workout-details"
-      />
-      
-      {/* Секция РЕКОМЕНДАЦИИ */}
-      <View style={styles.sectionOuterContainer}>
-        <View style={styles.sectionTitleOuterContainer}>
-          <View style={styles.sectionTitleContainer}>
-            <Text style={styles.sectionTitle}>РЕКОМЕНДАЦИИ</Text>
+        
+        {/* Блоки быстрых действий */}
+        <ActionBlock 
+          icon={<AntDesign name="plus" size={24} color="black" />} 
+          title="СОЗДАТЬ ПЛАН" 
+        />
+        
+        <ActionBlock 
+          icon={<FontAwesome5 name="bolt" size={24} color="black" />} 
+          title="РАЗОВАЯ ТРЕНИРОВКА" 
+          href="/workout-details"
+        />
+        
+        {/* Секция РЕКОМЕНДАЦИИ */}
+        <View style={styles.sectionOuterContainer}>
+          <View style={styles.sectionTitleOuterContainer}>
+            <View style={styles.sectionTitleContainer}>
+              <Text style={styles.sectionTitle}>РЕКОМЕНДАЦИИ</Text>
+            </View>
+          </View>
+          
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionContent}>
+              <RecommendationBlock 
+                title="УВЕЛИЧЬТЕ ВЕС В ЖИМЕ ЛЕЖА" 
+                description="Вы легко выполняете текущий вес. Попробуйте добавить 5–10%."
+              />
+              
+              <RecommendationBlock 
+                title="ДОБАВЬТЕ КАРДИО" 
+                description="Для вашей цели рекомендуется 2 кардио-тренировки в неделю."
+              />
+            </View>
           </View>
         </View>
         
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionContent}>
-            <RecommendationBlock 
-              title="УВЕЛИЧЬТЕ ВЕС В ЖИМЕ ЛЕЖА" 
-              description="Вы легко выполняете текущий вес. Попробуйте добавить 5–10%."
-            />
-            
-            <RecommendationBlock 
-              title="ДОБАВЬТЕ КАРДИО" 
-              description="Для вашей цели рекомендуется 2 кардио-тренировки в неделю."
-            />
-          </View>
-        </View>
-      </View>
-      
-      {/* Добавляем отступ снизу для лучшего скроллинга */}
-      <View style={{ height: 80 }} />
-    </ScrollView>
+        {/* Добавляем отступ снизу для лучшего скроллинга */}
+        <View style={{ height: 80 }} />
+      </ScrollView>
+    </View>
   );
 }
 
@@ -147,7 +151,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingTop: 60,
+    paddingTop: 10,
     fontFamily: 'IBMPlexMono-Regular',
   },
   headerTitle: {

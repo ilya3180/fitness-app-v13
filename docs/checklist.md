@@ -58,96 +58,96 @@
 ### 2.3
 - [x] Реализовать экран регистрации (email, пароль) с использованием `supabase.auth.signUp`
 ### 2.4
-- [ ] Сохранять токен авторизации в AsyncStorage
-- [ ] Проверять авторизацию при запуске приложения:
-  - [ ] Если токен есть, загружать данные пользователя
-  - [ ] Если токена нет, перенаправлять на экран входа
+- [x] Сохранять токен авторизации в AsyncStorage
+- [x] Проверять авторизацию при запуске приложения:
+  - [x] Если токен есть, загружать данные пользователя
+  - [x] Если токена нет, перенаправлять на экран входа
 ### 2.5
-- [ ] Реализовать выход из аккаунта (`supabase.auth.signOut`)
+- [x] Реализовать выход из аккаунта (`supabase.auth.signOut`)
 ### 2.6
 - [ ] Добавить обработку ошибок аутентификации (например, неверный пароль, пользователь не найден)
 
 ## 3. Реализация API (Supabase Edge Functions)
 ### 3.1. Статистика
-- [ ] Создать функцию `get_stats`:
+- [x] Создать функцию `get_stats`:
   - Запрос: `GET /stats?user_id=uuid`
   - Логика:
-    - [ ] Подсчитать количество тренировок (`SELECT COUNT(*) FROM workouts WHERE user_id = $1 AND status = 'completed'`)
-    - [ ] Подсчитать общее время (`SELECT SUM(duration) FROM workouts WHERE user_id = $1`)
-    - [ ] Рассчитать прогресс к цели (`COUNT(completed workouts) / total workouts in plan * 100`)
-    - [ ] Подсчитать бейджи (`SELECT COUNT(*) FROM achievements WHERE user_id = $1`)
+    - [x] Подсчитать количество тренировок (`SELECT COUNT(*) FROM workouts WHERE user_id = $1 AND status = 'completed'`)
+    - [x] Подсчитать общее время (`SELECT SUM(duration) FROM workouts WHERE user_id = $1`)
+    - [x] Рассчитать прогресс к цели (`COUNT(completed workouts) / total workouts in plan * 100`)
+    - [x] Подсчитать бейджи (`SELECT COUNT(*) FROM achievements WHERE user_id = $1`)
   - Ответ: `{ workouts: number, total_time: number, progress: number, badges: number }`
-- [ ] Создать функцию `get_regularity`:
+- [x] Создать функцию `get_regularity`:
   - Запрос: `GET /regularity?user_id=uuid&start_date=date&end_date=date`
   - Логика: Получить даты тренировок и сформировать массив заполненных дней
   - Ответ: `{ dates: string[] }`
 
 ### 3.2. Тренировочные планы
-- [ ] Создать функцию `create_plan`:
+- [x] Создать функцию `create_plan`:
   - Запрос: `POST /plans` с телом `{ user_id, goal, level, frequency, duration, inventory, target_muscles }`
   - Логика:
-    - [ ] Сохранить план в `training_plans`
-    - [ ] Подобрать упражнения из `exercises` с учетом `inventory`, `target_muscles`, `level`
-    - [ ] Создать записи в `workouts` для каждой тренировки
-    - [ ] Для каждой тренировки создать записи в `workout_exercises` (3–6 упражнений)
+    - [x] Сохранить план в `training_plans`
+    - [x] Подобрать упражнения из `exercises` с учетом `inventory`, `target_muscles`, `level`
+    - [x] Создать записи в `workouts` для каждой тренировки
+    - [x] Для каждой тренировки создать записи в `workout_exercises` (3–6 упражнений)
   - Ответ: `{ plan_id: uuid, workouts: { id: uuid, date: date }[] }`
-- [ ] Создать функцию `get_active_plan`:
+- [x] Создать функцию `get_active_plan`:
   - Запрос: `GET /plans/active?user_id=uuid`
   - Логика:
-    - [ ] Найти последний активный план
-    - [ ] Подсчитать прогресс
-    - [ ] Получить список тренировок
+    - [x] Найти последний активный план
+    - [x] Подсчитать прогресс
+    - [x] Получить список тренировок
   - Ответ: `{ id: uuid, name: string, progress: number, workouts: { id: uuid, date: date, status: string }[] }`
 
 ### 3.3. Тренировки
-- [ ] Создать функцию `create_workout` (для разовой тренировки):
+- [x] Создать функцию `create_workout` (для разовой тренировки):
   - Запрос: `POST /workouts` с телом `{ user_id, type, duration, target_muscles, inventory }`
   - Логика:
-    - [ ] Создать запись в `workouts` (`plan_id = null`, `status = 'planned'`)
-    - [ ] Подобрать 3–6 упражнений из `exercises` с учетом `type`, `inventory`, `target_muscles`
-    - [ ] Создать записи в `workout_exercises` с параметрами
+    - [x] Создать запись в `workouts` (`plan_id = null`, `status = 'planned'`)
+    - [x] Подобрать 3–6 упражнений из `exercises` с учетом `type`, `inventory`, `target_muscles`
+    - [x] Создать записи в `workout_exercises` с параметрами
   - Ответ: `{ workout_id: uuid, exercises: { id: uuid, name: string, sets: number, reps: number, weight: number, rest: number }[] }`
-- [ ] Создать функцию `update_workout`:
+- [x] Создать функцию `update_workout`:
   - Запрос: `PATCH /workouts/:id` с телом `{ status, feedback, exercises: { id, actual_sets, actual_reps, actual_weight, status }[] }`
   - Логика:
-    - [ ] Обновить `workouts` (`status`, `feedback`)
-    - [ ] Обновить `workout_exercises` (`actual_sets`, `actual_reps`, `actual_weight`, `status`)
+    - [x] Обновить `workouts` (`status`, `feedback`)
+    - [x] Обновить `workout_exercises` (`actual_sets`, `actual_reps`, `actual_weight`, `status`)
   - Ответ: `{ success: boolean }`
-- [ ] Создать функцию `get_workout_history`:
+- [x] Создать функцию `get_workout_history`:
   - Запрос: `GET /workouts/history?user_id=uuid&limit=number`
   - Логика: Получить последние тренировки
   - Ответ: `{ workouts: { id: uuid, type: string, date: date, duration: number, calories: number }[] }`
 
 ### 3.4. Упражнения
-- [ ] Создать функцию `get_exercises`:
+- [x] Создать функцию `get_exercises`:
   - Запрос: `GET /exercises?type=string&inventory=jsonb&muscles=string[]`
   - Логика: Фильтровать упражнения по `type`, `inventory`, `muscle_groups` через `exercise_muscle`
   - Ответ: `{ exercises: { id: uuid, name: string, description: string, tips: string, image_url: string, muscles: string[] }[] }`
 
 ### 3.5. Достижения
-- [ ] Создать функцию `check_achievements`:
+- [x] Создать функцию `check_achievements`:
   - Запрос: `POST /achievements/check?user_id=uuid`
   - Логика:
-    - [ ] Проверить "5 тренировок подряд": Найти последовательные даты в `workouts`
-    - [ ] Проверить "10 часов тренировок": `SUM(duration) >= 600` в `workouts`
-    - [ ] Проверить "+20% к весу": Сравнить `actual_weight` в `workout_exercises` с начальным
-    - [ ] Проверить "1 месяц с нами": `CURRENT_DATE - users.created_at >= 30 days`
-    - [ ] Добавить новые достижения в `achievements`
+    - [x] Проверить "5 тренировок подряд": Найти последовательные даты в `workouts`
+    - [x] Проверить "10 часов тренировок": `SUM(duration) >= 600` в `workouts`
+    - [x] Проверить "+20% к весу": Сравнить `actual_weight` в `workout_exercises` с начальным
+    - [x] Проверить "1 месяц с нами": `CURRENT_DATE - users.created_at >= 30 days`
+    - [x] Добавить новые достижения в `achievements`
   - Ответ: `{ new_achievements: { id: uuid, name: string, icon: string }[] }`
-- [ ] Создать функцию `get_achievements`:
+- [x] Создать функцию `get_achievements`:
   - Запрос: `GET /achievements?user_id=uuid`
   - Логика: Получить все достижения
   - Ответ: `{ achievements: { id: uuid, name: string, icon: string, date_earned: timestamp }[] }`
 
 ## 4. Интеграция с фронтендом
 ### 4.1. Home экран
-- [ ] Реализовать запрос к `get_stats` для отображения:
-  - [ ] Количество тренировок
-  - [ ] Общее время
-  - [ ] Прогресс к цели
-  - [ ] Количество бейджей
-- [ ] Реализовать запрос к `get_workout_history` для списка последних тренировок
-- [ ] Обновлять данные при каждом входе на экран
+- [x] Реализовать запрос к `get_stats` для отображения:
+  - [x] Количество тренировок
+  - [x] Общее время
+  - [x] Прогресс к цели
+  - [x] Количество бейджей
+- [x] Реализовать запрос к `get_workout_history` для списка последних тренировок
+- [x] Обновлять данные при каждом входе на экран
 
 ### 4.2. Activity экран
 - [ ] Реализовать запрос к `get_stats` для статистики

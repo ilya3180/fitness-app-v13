@@ -1,0 +1,29 @@
+{
+  "name": "fitbrutal-supabase-admin",
+  "version": "1.0.0",
+  "description": "Скрипты администрирования Supabase для приложения FitBrutal",
+  "private": true,
+  "scripts": {
+    "test-register": "node test-registration.js test",
+    "cleanup": "node test-registration.js cleanup",
+    "fix-trigger": "node supabase-admin.js fix-trigger",
+    "fix-tables": "node supabase-admin.js fix-tables",
+    "check": "node supabase-admin.js check",
+    "users": "node supabase-admin.js users",
+    "direct:check": "node supabase-direct.js check",
+    "direct:users": "node supabase-direct.js users",
+    "direct:fix-trigger": "node supabase-direct.js fix-trigger",
+    "generate-token": "node generate-admin-token.js",
+    "api:check": "node supabase-api.js check",
+    "api:users": "node supabase-api.js users",
+    "api:test-register": "node supabase-api.js test-register",
+    "api:cleanup": "node supabase-api.js cleanup",
+    "api:fix-trigger": "node supabase-api.js fix-trigger"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.33.2",
+    "dotenv": "^16.3.1",
+    "jsonwebtoken": "^9.0.1",
+    "uuid": "^9.0.0"
+  }
+}

@@ -19,9 +19,9 @@ const ExpoSecureStoreAdapter = {
 };
 
 // Получение переменных окружения из Expo Constants
-const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl as string || '';
-const supabaseAnonKey = Constants.expoConfig?.extra?.supabaseAnonKey as string || '';
-const supabaseServiceRoleKey = Constants.expoConfig?.extra?.supabaseServiceRoleKey as string || '';
+const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl as string || 'https://xbegrkfaglcmtguvmtsb.supabase.co';
+const supabaseAnonKey = Constants.expoConfig?.extra?.supabaseAnonKey as string || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiZWdya2ZhZ2xjbXRndXZtdHNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MzU1MzcsImV4cCI6MjA2MDQxMTUzN30.Jf4AE6bxRAF_bgQU7H3-KLVxE2z31xBW7tC6sQ6mvHw';
+const supabaseServiceRoleKey = Constants.expoConfig?.extra?.supabaseServiceRoleKey as string || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiZWdya2ZhZ2xjbXRndXZtdHNiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDgzNTUzNywiZXhwIjoyMDYwNDExNTM3fQ.QUSj5WoUXE6mhjy_FhF9F1pq5u-tT_0RWfYST3kipA8';
 
 // Проверка наличия обязательных переменных окружения
 if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {

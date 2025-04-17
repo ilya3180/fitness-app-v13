@@ -182,12 +182,28 @@ CREATE POLICY achievements_delete ON achievements FOR DELETE
 CREATE OR REPLACE FUNCTION public.handle_new_user() 
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.users (id, email, created_at)
-  VALUES (NEW.id, NEW.email, NEW.created_at);
+  -- Проверка, существует ли уже пользователь с таким ID
+  IF EXISTS (SELECT 1 FROM public.users WHERE id = NEW.id) THEN
+    -- Если пользователь уже существует, обновляем его данные
+    UPDATE public.users 
+    SET email = NEW.email, created_at = NEW.created_at
+    WHERE id = NEW.id;
+  ELSE
+    -- Если пользователя нет, создаем новую запись
+    INSERT INTO public.users (id, email, created_at)
+    VALUES (NEW.id, NEW.email, NEW.created_at);
+  END IF;
+  
+  RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+  -- В случае любой ошибки логируем ее, но не прерываем выполнение
+  RAISE WARNING 'Ошибка в триггере handle_new_user: %', SQLERRM;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE OR REPLACE TRIGGER on_auth_user_created
+-- Перенастраиваем триггер
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user(); 

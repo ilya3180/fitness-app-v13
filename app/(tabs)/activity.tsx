@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components/native';
 import { View, ScrollView, Text } from 'react-native';
 import { MaterialCommunityIcons, FontAwesome5, Feather } from '@expo/vector-icons';
+import { ProfileMenu } from '@/components/ProfileMenu';
 
 const ACCENT = '#D13F32';
 const BORDER = '#000';
@@ -11,6 +12,7 @@ const GREY = '#F3F4F6';
 export default function ActivityScreen() {
   return (
     <Container>
+      <ProfileMenu />
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
         <Title>АКТИВНОСТЬ</Title>
         <BlackLine />
@@ -198,13 +200,18 @@ const CalendarGrid = styled.View`
 const CalendarRow = styled.View`
   flex-direction: row;
   justify-content: space-between;
-  margin-bottom: 4px;
 `;
-const CalendarCell = styled.View<{ filled?: boolean }>`
-  width: 36px;
-  height: 36px;
-  background: ${({ filled }) => (filled ? ACCENT : GREY)};
-  border: 2.5px solid #000;
+
+interface CalendarCellProps {
+  filled: boolean;
+}
+
+const CalendarCell = styled.View<CalendarCellProps>`
+  width: 35px;
+  height: 35px;
+  margin: 4px;
+  border: 2px solid ${BORDER};
+  background-color: ${(props: CalendarCellProps) => (props.filled ? ACCENT : '#fff')};
 `;
 const AchievementsGrid = styled.View`
   flex-direction: row;

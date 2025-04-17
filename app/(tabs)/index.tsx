@@ -1,7 +1,11 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import styled from 'styled-components/native';
-import { View, ScrollView, Text } from 'react-native';
+import { View, ScrollView, Text, RefreshControl } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import { ProfileMenu } from '@/components/ProfileMenu';
+import { useHomeData } from '@/hooks/useHomeData';
+import { formatTime, formatWorkoutDate } from '@/lib/supabase/api';
 
 const ACCENT = '#D13F32';
 const BORDER = '#000';
@@ -9,9 +13,33 @@ const BG = '#fff';
 const GREY = '#F3F4F6';
 
 export default function HomeScreen() {
+  const { stats, workouts, loading, refetch } = useHomeData();
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  // Обновляем данные при фокусе экрана
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
+
+  // Обработчик pull-to-refresh
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
+  
   return (
     <Container>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
+      <ProfileMenu />
+      <ScrollView 
+        contentContainerStyle={{ flexGrow: 1 }} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <LogoBlock>
           <LogoRow>
             <LogoText>FIT</LogoText>
@@ -26,48 +54,42 @@ export default function HomeScreen() {
           <SectionTitle>СТАТИСТИКА</SectionTitle>
           <StatsGrid>
             <StatBox>
-              <StatValue>12</StatValue>
+              <StatValue>{stats?.workouts || 0}</StatValue>
               <StatLabel>ТРЕНИРОВОК</StatLabel>
             </StatBox>
             <StatBox>
-              <StatValue>6.5ч</StatValue>
+              <StatValue>{stats ? formatTime(stats.total_time) : '0ч'}</StatValue>
               <StatLabel>ОБЩЕЕ ВРЕМЯ</StatLabel>
             </StatBox>
             <StatBox>
-              <StatValue>68%</StatValue>
+              <StatValue>{stats ? `${Math.round(stats.progress)}%` : '0%'}</StatValue>
               <StatLabel>ПРОГРЕСС</StatLabel>
             </StatBox>
             <StatBox>
-              <StatValue>4</StatValue>
+              <StatValue>{stats?.badges || 0}</StatValue>
               <StatLabel>БЕЙДЖИ</StatLabel>
             </StatBox>
           </StatsGrid>
         </Section>
         <Section>
           <SectionTitle>ТРЕНИРОВКИ</SectionTitle>
-          <WorkoutList>
-            <WorkoutCard>
-              <WorkoutTitleRow>
-                <WorkoutTitle>СИЛОВАЯ ТРЕНИРОВКА</WorkoutTitle>
-                <WorkoutTag>ВЧЕРА</WorkoutTag>
-              </WorkoutTitleRow>
-              <WorkoutDesc>Верхняя часть тела</WorkoutDesc>
-            </WorkoutCard>
-            <WorkoutCard>
-              <WorkoutTitleRow>
-                <WorkoutTitle>КАРДИО</WorkoutTitle>
-                <WorkoutAgo>3 ДНЯ НАЗАД</WorkoutAgo>
-              </WorkoutTitleRow>
-              <WorkoutDesc>30 минут</WorkoutDesc>
-            </WorkoutCard>
-            <WorkoutCard>
-              <WorkoutTitleRow>
-                <WorkoutTitle>СИЛОВАЯ ТРЕНИРОВКА</WorkoutTitle>
-                <WorkoutAgo>5 ДНЕЙ НАЗАД</WorkoutAgo>
-              </WorkoutTitleRow>
-              <WorkoutDesc>Нижняя часть тела</WorkoutDesc>
-            </WorkoutCard>
-          </WorkoutList>
+          {loading && !refreshing ? (
+            <LoadingMessage>ЗАГРУЗКА...</LoadingMessage>
+          ) : workouts.length === 0 ? (
+            <EmptyMessage>У ВАС ЕЩЕ НЕТ ТРЕНИРОВОК</EmptyMessage>
+          ) : (
+            <WorkoutList>
+              {workouts.map((workout) => (
+                <WorkoutCard key={workout.id}>
+                  <WorkoutTitleRow>
+                    <WorkoutTitle>{workout.type.toUpperCase()}</WorkoutTitle>
+                    <WorkoutTag>{formatWorkoutDate(workout.date)}</WorkoutTag>
+                  </WorkoutTitleRow>
+                  <WorkoutDesc>{workout.duration} минут</WorkoutDesc>
+                </WorkoutCard>
+              ))}
+            </WorkoutList>
+          )}
         </Section>
       </ScrollView>
     </Container>
@@ -192,4 +214,18 @@ const WorkoutDesc = styled.Text`
   font-size: 16px;
   color: #222;
   margin-top: 4px;
+`;
+const LoadingMessage = styled.Text`
+  font-size: 18px;
+  font-weight: 700;
+  color: #222;
+  text-align: center;
+  margin: 20px 0;
+`;
+const EmptyMessage = styled.Text`
+  font-size: 18px;
+  font-weight: 700;
+  color: #222;
+  text-align: center;
+  margin: 20px 0;
 `;

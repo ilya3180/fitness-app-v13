@@ -30,7 +30,7 @@ export default function ForgotPasswordScreen() {
     try {
       // Отправка запроса на сброс пароля
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'http://localhost:8081/auth/reset-password',
+        redirectTo: 'myapp://auth/reset-password',
       });
       
       // Завершаем состояние загрузки

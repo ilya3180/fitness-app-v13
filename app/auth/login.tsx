@@ -7,10 +7,10 @@ import {
   Alert
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
-import { supabase } from '../../lib/supabase';
 import LogoBrutal from '../../components/LogoBrutal';
 import BrutalInput from '../../components/ui/BrutalInput';
 import BrutalButton from '../../components/ui/BrutalButton';
+import { useAuth } from '../../lib/context/AuthContext';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -18,6 +18,7 @@ export default function LoginScreen() {
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { signIn } = useAuth();
 
   const handleLogin = async () => {
     // Сбрасываем ошибку
@@ -33,11 +34,8 @@ export default function LoginScreen() {
     setIsLoading(true);
 
     try {
-      // Аутентификация пользователя через Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // Аутентификация пользователя через контекст авторизации
+      const { error } = await signIn(email, password);
       
       // Завершаем состояние загрузки
       setIsLoading(false);
@@ -58,11 +56,11 @@ export default function LoginScreen() {
       }
       
       // Логирование успешного входа (для дебага)
-      console.log('Login successful:', data);
+      console.log('Login successful');
       
       // Перенаправление на главную страницу
       router.replace('/');
-    } catch (error) {
+    } catch (error: any) {
       // Завершаем состояние загрузки
       setIsLoading(false);
       

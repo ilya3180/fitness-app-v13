@@ -1,15 +1,24 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import LogoBrutal from '../../components/LogoBrutal';
 import BrutalButton from '../../components/ui/BrutalButton';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function RegistrationSuccessScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const [showDbWarning, setShowDbWarning] = useState(false);
+  
+  // Проверяем параметр URL dbError, чтобы показать дополнительное предупреждение
+  useEffect(() => {
+    if (params.dbError === 'true') {
+      setShowDbWarning(true);
+    }
+  }, [params]);
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       {/* Логотип */}
       <View style={styles.logoContainer}>
         <LogoBrutal size="medium" />
@@ -33,6 +42,16 @@ export default function RegistrationSuccessScreen() {
         <Text style={styles.submessageText}>
           Проверьте свою почту и нажмите на ссылку для завершения регистрации
         </Text>
+        
+        {/* Дополнительное предупреждение об ошибке базы данных */}
+        {showDbWarning && (
+          <View style={styles.warningContainer}>
+            <Ionicons name="warning-outline" size={24} color="#FF9800" style={styles.warningIcon} />
+            <Text style={styles.warningText}>
+              Обратите внимание: при сохранении некоторых данных профиля возникла техническая ошибка. Вы сможете заполнить свой профиль после входа в систему.
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Кнопки */}
@@ -50,7 +69,7 @@ export default function RegistrationSuccessScreen() {
         onPress={() => router.replace('/')}
         containerStyle={styles.secondaryButtonContainer}
       />
-    </View>
+    </ScrollView>
   );
 }
 
@@ -58,7 +77,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  contentContainer: {
     padding: 20,
+    paddingBottom: 40,
   },
   logoContainer: {
     alignItems: 'center',
@@ -116,5 +138,25 @@ const styles = StyleSheet.create({
   },
   secondaryButtonContainer: {
     marginBottom: 30,
+  },
+  warningContainer: {
+    marginTop: 15,
+    padding: 10,
+    backgroundColor: '#FFF3E0',
+    borderRadius: 5,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF9800',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  warningIcon: {
+    marginRight: 10,
+    marginTop: 2,
+  },
+  warningText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#333333',
+    fontFamily: 'Helvetica',
   },
 }); 

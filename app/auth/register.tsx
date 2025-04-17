@@ -1,33 +1,26 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Pressable,
-  ScrollView,
-  Alert
-} from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Link, useRouter } from 'expo-router';
-import { supabase } from '../../lib/supabase';
 import LogoBrutal from '../../components/LogoBrutal';
 import BrutalInput from '../../components/ui/BrutalInput';
 import BrutalButton from '../../components/ui/BrutalButton';
+import { useAuth } from '../../lib/context/AuthContext';
 
 export default function RegisterScreen() {
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { signUp } = useAuth();
 
   const handleRegister = async () => {
-    // Сбрасываем ошибку
+    // Сбросим предыдущие ошибки
     setErrorMessage('');
 
-    // Валидация полей
-    if (!name || !email || !password || !confirmPassword) {
+    // Валидация формы
+    if (!email || !password || !confirmPassword) {
       setErrorMessage('Заполните все поля');
       return;
     }
@@ -37,44 +30,43 @@ export default function RegisterScreen() {
       return;
     }
 
+    // Проверка сложности пароля
     if (password.length < 6) {
       setErrorMessage('Пароль должен содержать не менее 6 символов');
       return;
     }
 
-    // Установка состояния загрузки
+    // Начинаем процесс регистрации
     setIsLoading(true);
 
     try {
-      // Регистрация пользователя в Supabase
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name: name,
-            // Дополнительные поля профиля можно добавить здесь
-          }
-        }
-      });
+      // Регистрация через контекст авторизации
+      const { error } = await signUp(email, password);
       
-      // Завершаем состояние загрузки
+      // Завершаем загрузку
       setIsLoading(false);
-      
-      // Обработка ошибок
+
       if (error) {
         console.error('Ошибка регистрации:', error.message);
-        setErrorMessage(error.message);
+        
+        // Обработка типичных ошибок
+        if (error.message.includes('already registered')) {
+          setErrorMessage('Этот email уже зарегистрирован');
+        } else if (error.message.includes('valid email')) {
+          setErrorMessage('Введите корректный email');
+        } else {
+          setErrorMessage(error.message);
+        }
         return;
       }
+
+      // Показываем сообщение об успешной регистрации
+      alert('Регистрация успешна! Проверьте ваш email для подтверждения аккаунта.');
       
-      // Логирование успешной попытки (для дебага)
-      console.log('Registration successful:', data);
-      
-      // Перенаправление на экран успешной регистрации
-      router.replace('/auth/registration-success');
-    } catch (error) {
-      // Завершаем состояние загрузки
+      // Возвращаемся на экран входа
+      router.replace('/auth/login');
+    } catch (error: any) {
+      // Завершаем загрузку
       setIsLoading(false);
       
       // Обработка непредвиденных ошибок
@@ -84,13 +76,10 @@ export default function RegisterScreen() {
   };
 
   return (
-    <ScrollView 
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-    >
+    <View style={styles.container}>
       {/* Логотип */}
       <View style={styles.logoContainer}>
-        <LogoBrutal size="medium" />
+        <LogoBrutal size="large" />
         <Text style={styles.tagline}>NO PAIN. NO GAIN.</Text>
       </View>
 
@@ -100,13 +89,6 @@ export default function RegisterScreen() {
 
       {/* Форма регистрации */}
       <View style={styles.formContainer}>
-        <BrutalInput
-          label="Имя"
-          value={name}
-          onChangeText={setName}
-          placeholder="Введите ваше имя"
-        />
-
         <BrutalInput
           label="Email"
           value={email}
@@ -147,13 +129,6 @@ export default function RegisterScreen() {
         />
       </View>
 
-      {/* Условия использования */}
-      <View style={styles.termsContainer}>
-        <Text style={styles.termsText}>
-          РЕГИСТРИРУЯСЬ, ВЫ СОГЛАШАЕТЕСЬ С НАШИМИ УСЛОВИЯМИ ИСПОЛЬЗОВАНИЯ И ПОЛИТИКОЙ КОНФИДЕНЦИАЛЬНОСТИ
-        </Text>
-      </View>
-
       {/* Ссылка на вход */}
       <Link href="/auth/login" asChild>
         <Pressable style={styles.loginLink}>
@@ -162,7 +137,7 @@ export default function RegisterScreen() {
           </Text>
         </Pressable>
       </Link>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -170,10 +145,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-  },
-  contentContainer: {
     padding: 20,
-    paddingBottom: 40,
+    alignItems: 'stretch',
   },
   logoContainer: {
     alignItems: 'center',
@@ -216,22 +189,8 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     textAlign: 'center',
   },
-  termsContainer: {
-    borderWidth: 3,
-    borderColor: '#000000',
-    padding: 15,
-    marginBottom: 20,
-  },
-  termsText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#333333',
-    fontFamily: 'Helvetica',
-  },
   loginLink: {
     alignSelf: 'center',
-    marginBottom: 10,
   },
   loginLinkText: {
     fontSize: 14,
